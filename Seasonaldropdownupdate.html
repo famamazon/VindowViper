@@ -40,6 +40,8 @@
             padding: 10px;
             text-align: center;
             z-index: 2000;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         .tallyItem {
             display: flex;
@@ -73,9 +75,19 @@
             border: none;
             border-radius: 4px;
             margin: 0;
+            transition: all 0.3s ease;
         }
         #fileInput {
             padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #downloadCsv {
+            background-color: #4CAF50;
+            color: white;
+        }
+        #downloadCsv:hover {
+            background-color: #45a049;
         }
         .buttonGroup {
             display: flex;
@@ -84,6 +96,9 @@
         .ratioButton {
             background-color: #f0f0f0;
         }
+        .ratioButton:hover {
+            background-color: #e0e0e0;
+        }
         .ratioButton.active {
             background-color: #4CAF50;
             color: white;
@@ -91,12 +106,18 @@
         #safeZonesButton {
             background-color: #f0f0f0;
         }
+        #safeZonesButton:hover {
+            background-color: #e0e0e0;
+        }
         #safeZonesButton.active {
             background-color: #FF8C00;
             color: white;
         }
         #reviewToggleButton {
             background-color: #f0f0f0;
+        }
+        #reviewToggleButton:hover {
+            background-color: #e0e0e0;
         }
         #reviewToggleButton.active {
             background-color: #2196F3;
@@ -106,13 +127,21 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: flex-start;
+            gap: 20px;
         }
         .imageContainer {
             flex-grow: 1;
-            flex-basis: 200px;
+            flex-basis: 300px;
             margin: 10px;
             padding-top: 50px;
             text-align: center;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .imageContainer:hover {
+            transform: translateY(-5px);
         }
         .mediaWrapper {
             position: relative;
@@ -125,6 +154,7 @@
             overflow: hidden;
             transition: padding-top 0.3s ease;
             cursor: pointer;
+            border-radius: 4px;
         }
         .mediaWrapper.ratio-9-16 {
             padding-top: 177.78%;
@@ -145,6 +175,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            border-radius: 4px;
         }
         .mediaWrapper video {
             background: #000;
@@ -159,6 +190,10 @@
             text-shadow: 0 0 10px rgba(0,0,0,0.5);
             pointer-events: none;
             z-index: 1;
+            transition: transform 0.3s ease;
+        }
+        .mediaWrapper:hover .videoThumbnail {
+            transform: translate(-50%, -50%) scale(1.1);
         }
         .videoControls {
             position: absolute;
@@ -171,6 +206,11 @@
             justify-content: space-between;
             align-items: center;
             z-index: 2;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .mediaWrapper:hover .videoControls {
+            opacity: 1;
         }
         .videoControls button {
             background: transparent;
@@ -179,11 +219,17 @@
             cursor: pointer;
             font-size: 1.2em;
             padding: 5px 10px;
+            transition: transform 0.3s ease;
+        }
+        .videoControls button:hover {
+            transform: scale(1.1);
         }
         .originalRatio {
             color: white;
             font-size: 0.9em;
             padding: 0 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
         }
         .safeZonesOverlay {
             position: absolute;
@@ -208,6 +254,10 @@
             text-align: center;
             color: #666;
             font-weight: bold;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         .imageHeader {
             display: flex;
@@ -215,21 +265,33 @@
             justify-content: center;
             gap: 10px;
             margin-bottom: 5px;
+            padding: 10px;
+            background-color: #f8f8f8;
+            border-radius: 4px;
         }
         .countryFlag {
             font-size: 1.5em;
         }
         .imageNumber {
             font-weight: bold;
+            color: #666;
         }
         .imageCategory {
             color: #666;
             margin-bottom: 10px;
             font-style: italic;
+            padding: 5px 10px;
+            background-color: #f8f8f8;
+            border-radius: 4px;
+            display: inline-block;
         }
         .reviewSection {
             transition: opacity 0.3s ease, height 0.3s ease;
             overflow: hidden;
+            padding: 15px;
+            background-color: #f8f8f8;
+            border-radius: 4px;
+            margin-top: 10px;
         }
         .reviewSection.hidden {
             opacity: 0;
@@ -242,6 +304,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            gap: 10px;
         }
         .thumbsButtons {
             display: flex;
@@ -249,7 +312,7 @@
             margin: 0;
         }
         .seasonSelect {
-            padding: 5px 10px;
+            padding: 8px 12px;
             font-size: 1em;
             border-radius: 4px;
             border: 1px solid #ccc;
@@ -257,9 +320,14 @@
             cursor: pointer;
             margin-bottom: 10px;
             width: 100%;
+            transition: border-color 0.3s ease;
+        }
+        .seasonSelect:hover, .seasonSelect:focus {
+            border-color: #4CAF50;
+            outline: none;
         }
         .seasonSelect option {
-            padding: 5px;
+            padding: 8px;
         }
         .dropdown {
             margin-top: 10px;
@@ -271,47 +339,64 @@
             margin-bottom: 5px;
             border-radius: 4px;
             border: 1px solid #ccc;
+            transition: border-color 0.3s ease;
+        }
+        .dropdown select:hover, .dropdown select:focus {
+            border-color: #2196F3;
+            outline: none;
         }
         .reactionButtons button {
             margin: 0 5px;
-            padding: 5px 10px;
+            padding: 8px 15px;
             cursor: pointer;
             border: none;
             background-color: #f0f0f0;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
             font-size: 1.2em;
+            border-radius: 4px;
+        }
+        .reactionButtons button:hover {
+            transform: scale(1.1);
         }
         .reactionButtons button.selected {
             color: white;
         }
         .reactionButtons button.thumbsUp.selected {
-            background-color: green;
+            background-color: #4CAF50;
         }
         .reactionButtons button.thumbsDown.selected {
-            background-color: red;
+            background-color: #f44336;
         }
         .commentSection {
-            margin-top: 10px;
+            margin-top: 15px;
             width: 100%;
         }
         .commentSection textarea {
             width: 100%;
-            padding: 5px;
+            padding: 8px;
             margin-top: 5px;
             resize: vertical;
             min-height: 60px;
             font-family: Arial, sans-serif;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            transition: border-color 0.3s ease;
+        }
+        .commentSection textarea:hover, .commentSection textarea:focus {
+            border-color: #2196F3;
+            outline: none;
         }
         .mediaType {
             position: absolute;
             top: 10px;
             right: 10px;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.7);
             color: white;
             padding: 5px 10px;
             border-radius: 4px;
             font-size: 0.8em;
             z-index: 2;
+            font-weight: bold;
         }
         .mediaLinksContainer {
             display: flex;
@@ -319,6 +404,9 @@
             align-items: center;
             gap: 10px;
             margin: 10px 0;
+            padding: 10px;
+            background-color: #f8f8f8;
+            border-radius: 4px;
         }
         .linksArea {
             display: flex;
@@ -326,43 +414,49 @@
         }
         .mediaLinksContainer a {
             text-decoration: none;
-            padding: 5px 10px;
-            background-color: #f0f0f0;
-            color: #333;
+            padding: 8px 15px;
+            background-color: #2196F3;
+            color: white;
             border-radius: 4px;
             font-size: 0.9em;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
         }
         .mediaLinksContainer a:hover {
-            background-color: #e0e0e0;
+            background-color: #1976D2;
+            transform: translateY(-2px);
         }
         .mediaLinksContainer .thumbsButtons button {
-            padding: 5px 10px;
+            padding: 8px 15px;
             cursor: pointer;
             border: none;
             background-color: #f0f0f0;
             border-radius: 4px;
             font-size: 1.2em;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
+        }
+        .mediaLinksContainer .thumbsButtons button:hover {
+            transform: scale(1.1);
         }
         .mediaLinksContainer .thumbsButtons button.selected {
             color: white;
         }
         .mediaLinksContainer .thumbsButtons button.thumbsUp.selected {
-            background-color: green;
+            background-color: #4CAF50;
         }
         .mediaLinksContainer .thumbsButtons button.thumbsDown.selected {
-            background-color: red;
+            background-color: #f44336;
         }
         .titleLogo {
             width: 128px;
             height: 96px;
             margin-right: 20px;
             vertical-align: middle;
+            border-radius: 8px;
         }
         #headerSection h1 {
             display: flex;
             align-items: center;
+            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -377,12 +471,13 @@
             </div>
             <div class="tallyItem">
                 <span class="tallyEmoji">👎</span>
+                
                 <span class="tallyCount" id="thumbsDownCount">0</span>
             </div>
         </div>
         
         <div id="inputArea">
-            <div class="controlsContainer">
+               <div class="controlsContainer">
                 <input type="file" id="fileInput" accept=".csv">
                 <button id="downloadCsv">Download CSV</button>
                 <div class="buttonGroup">
@@ -411,7 +506,7 @@
         let thumbsDownCount = 0;
 
         const seasonMapping = {
-            'Select season': '',  // Default option
+            'Seasonal/Holiday Annotation': '',  // Updated default option
             'Spring': '🌸 Spring',
             'Summer': '☀️ Summer',
             'Fall': '🍁 Fall',
@@ -657,7 +752,7 @@
         }
 
         function updateSeasonSelection(mediaUrl, season) {
-            imageReactions[mediaUrl].season = season === 'Select season' ? '' : season;
+            imageReactions[mediaUrl].season = season === 'Seasonal/Holiday Annotation' ? '' : season;
         }
 
         function react(mediaUrl, reaction, selectedButton, otherButton) {
