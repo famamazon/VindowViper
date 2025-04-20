@@ -22,10 +22,6 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             z-index: 1000;             
         }
-        #tallyCounter, .controlsContainer, #mainContent, .imageContainer, 
-        .mediaWrapper, .reviewSection, .reactionButtons {
-            box-sizing: border-box;
-        }
         #tallyCounter {
             background-color: #f0f0f0;
             padding: 10px;
@@ -34,6 +30,25 @@
             display: flex;
             justify-content: center;
             gap: 20px;
+        }
+        .tallyItem {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .tallyEmoji {
+            font-size: 1.2em;
+        }
+        .tallyCount {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        #mainContent {
+            margin-top: 220px;
+            padding: 20px;
+        }
+        #inputArea, #imageArea {
+            margin-bottom: 20px;
         }
         .controlsContainer {
             display: flex;
@@ -49,36 +64,287 @@
             border-radius: 4px;
             margin: 0;
         }
+        #fileInput {
+            padding: 10px;
+        }
+        .buttonGroup {
+            display: flex;
+            gap: 10px;
+        }
+        .ratioButton {
+            background-color: #f0f0f0;
+        }
+        .ratioButton.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        #safeZonesButton {
+            background-color: #f0f0f0;
+        }
+        #safeZonesButton.active {
+            background-color: #FF8C00;
+            color: white;
+        }
+        #reviewToggleButton {
+            background-color: #f0f0f0;
+        }
+        #reviewToggleButton.active {
+            background-color: #2196F3;
+            color: white;
+        }
+        #imageArea {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+        }
+        .imageContainer {
+            flex-grow: 1;
+            flex-basis: 200px;
+            margin: 10px;
+            padding-top: 50px;
+            text-align: center;
+        }
         .mediaWrapper {
             position: relative;
             width: 100%;
             margin-bottom: 10px;
             background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            transition: padding-top 0.3s ease;
+        }
+        .mediaWrapper.ratio-9-16 {
+            padding-top: 177.78%;
+        }
+        .mediaWrapper.ratio-4-5 {
+            padding-top: 125%;
+        }
+        .mediaWrapper.ratio-1-1 {
+            padding-top: 100%;
+        }
+        .mediaWrapper.ratio-16-9 {
+            padding-top: 56.25%;
+        }
+        .mediaWrapper img, .mediaWrapper video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .mediaWrapper video {
+            background: #000;
+        }
+        .videoControls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 2;
+        }
+        .videoControls button {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 5px 10px;
+        }
+        .originalRatio {
+            color: white;
+            font-size: 0.9em;
+            padding: 0 10px;
+        }
+        .safeZonesOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1;
+        }
+        .safeZonesOverlay.visible {
+            opacity: 1;
+        }
+        .mediaError {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #666;
+            font-weight: bold;
+        }
+        .imageHeader {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+        .countryFlag {
+            font-size: 1.5em;
+        }
+        .imageNumber {
+            font-weight: bold;
+        }
+        .imageCategory {
+            color: #666;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+        .reviewSection {
+            transition: opacity 0.3s ease, height 0.3s ease;
+            overflow: hidden;
+        }
+        .reviewSection.hidden {
+            opacity: 0;
+            height: 0;
+            margin: 0;
+            padding: 0;
+        }
+        .reactionButtons {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .thumbsButtons {
+            display: flex;
+            gap: 10px;
+            margin: 0;
+        }
+        .seasonButtons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+        .reactionButtons button {
+            margin: 0 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            border: none;
+            background-color: #f0f0f0;
+            transition: background-color 0.3s;
+            font-size: 1.2em;
+        }
+        .reactionButtons button.selected {
+            color: white;
+        }
+        .reactionButtons button.thumbsUp.selected {
+            background-color: green;
+        }
+        .reactionButtons button.thumbsDown.selected {
+            background-color: red;
+        }
+        .reactionButtons button.season.selected {
+            background-color: #2196F3;
         }
         .dropdown {
             margin-top: 10px;
-            width: 100%;
+        }
+        .dropdown + .dropdown {
+            margin-top: 5px;
+        }
+        .dropdown + .dropdown + .dropdown {
+            margin-top: 5px;
         }
         .dropdown select {
             width: 100%;
-            padding: 8px;
+            padding: 5px;
             margin-bottom: 5px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
         }
-        .seasonSelect {
-            padding: 5px 10px;
-            font-size: 1em;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-            background-color: white;
-            cursor: pointer;
-            margin-bottom: 10px;
+        .commentSection {
+            margin-top: 10px;
             width: 100%;
         }
-        /* Add more of your existing styles here */
+        .commentSection textarea {
+            width: 100%;
+            padding: 5px;
+            margin-top: 5px;
+            resize: vertical;
+            min-height: 60px;
+            font-family: Arial, sans-serif;
+        }
+        .mediaType {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            z-index: 2;
+        }
+        .mediaLinksContainer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .linksArea {
+            display: flex;
+            gap: 10px;
+        }
+        .mediaLinksContainer a {
+            text-decoration: none;
+            padding: 5px 10px;
+            background-color: #f0f0f0;
+            color: #333;
+            border-radius: 4px;
+            font-size: 0.9em;
+            transition: background-color 0.3s;
+        }
+        .mediaLinksContainer a:hover {
+            background-color: #e0e0e0;
+        }
+         .mediaLinksContainer .thumbsButtons button {
+            padding: 5px 10px;
+            cursor: pointer;
+            border: none;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            font-size: 1.2em;
+            transition: background-color 0.3s;
+        }
+        .mediaLinksContainer .thumbsButtons button.selected {
+            color: white;
+        }
+        .mediaLinksContainer .thumbsButtons button.thumbsUp.selected {
+            background-color: green;
+        }
+        .mediaLinksContainer .thumbsButtons button.thumbsDown.selected {
+            background-color: red;
+        }
+        .titleLogo {
+            width: 128px;
+            height: 96px;
+            margin-right: 20px;
+            vertical-align: middle;
+        }
+
+        #headerSection h1 {
+            display: flex;
+            align-items: center;
+        }
     </style>
 </head>
+
 <body>
     <div id="headerSection">
         <h1><img src="https://static.wikia.nocookie.net/animaniacs/images/1/1f/The_Viper_silhouette.jpg/revision/latest?cb=20220810225021" alt="Vindow_Viper" class="titleLogo">Vindow Viper</h1>
@@ -93,6 +359,7 @@
                 <span class="tallyCount" id="thumbsDownCount">0</span>
             </div>
         </div>
+        
         <div id="inputArea">
             <div class="controlsContainer">
                 <input type="file" id="fileInput" accept=".csv">
@@ -122,12 +389,82 @@
         let thumbsUpCount = 0;
         let thumbsDownCount = 0;
 
+        function updateTallyCounters() {
+            let upCount = 0;
+            let downCount = 0;
+            
+            Object.values(imageReactions).forEach(reaction => {
+                if (reaction.reaction === 'thumbs up') upCount++;
+                if (reaction.reaction === 'thumbs down') downCount++;
+            });
+            
+            document.getElementById('thumbsUpCount').textContent = upCount;
+            document.getElementById('thumbsDownCount').textContent = downCount;
+            
+            thumbsUpCount = upCount;
+            thumbsDownCount = downCount;
+        }
+
+        function generateCustomFilename(aci, country, mediaUrl) {
+            const originalExtension = mediaUrl.split('.').pop().toLowerCase();
+            const countryCode = country || 'NA';
+            return `${countryCode}.${aci}.${originalExtension}`;
+        }
+
+        function getMediaType(url) {
+            const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.wmv', '.m4v', '.mpg', '.mpeg'];
+            const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+            const urlLower = url.toLowerCase();
+            
+            if (videoExtensions.some(ext => urlLower.endsWith(ext))) {
+                return 'video';
+            }
+            if (imageExtensions.some(ext => urlLower.endsWith(ext))) {
+                return 'image';
+            }
+            if (urlLower.includes('youtube.com') || urlLower.includes('vimeo.com')) {
+                return 'video';
+            }
+            return 'image';
+        }
+        function calculateAspectRatio(width, height) {
+            const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+            const divisor = gcd(width, height);
+            const simplifiedWidth = width / divisor;
+            const simplifiedHeight = height / divisor;
+            
+            const ratio = width / height;
+            if (Math.abs(ratio - 16/9) < 0.01) return "16:9";
+            if (Math.abs(ratio - 9/16) < 0.01) return "9:16";
+            if (Math.abs(ratio - 4/5) < 0.01) return "4:5";
+            if (Math.abs(ratio - 1) < 0.01) return "1:1";
+            
+            return `${simplifiedWidth}:${simplifiedHeight}`;
+        }
+
+        function getAspectRatio(mediaElement) {
+            return new Promise((resolve) => {
+                if (mediaElement instanceof HTMLImageElement) {
+                    if (mediaElement.complete) {
+                        resolve(calculateAspectRatio(mediaElement.naturalWidth, mediaElement.naturalHeight));
+                    } else {
+                        mediaElement.onload = () => resolve(calculateAspectRatio(mediaElement.naturalWidth, mediaElement.naturalHeight));
+                    }
+                } else if (mediaElement instanceof HTMLVideoElement) {
+                    if (mediaElement.videoWidth) {
+                        resolve(calculateAspectRatio(mediaElement.videoWidth, mediaElement.videoHeight));
+                    } else {
+                        mediaElement.onloadedmetadata = () => resolve(calculateAspectRatio(mediaElement.videoWidth, mediaElement.videoHeight));
+                    }
+                }
+            });
+        }
+
         const seasonMapping = {
-            'Select season': '',  // Default option
-            'Spring': '🌸 Spring',
-            'Summer': '☀️ Summer',
-            'Fall': '🍁 Fall',
-            'Winter': '❄️ Winter'
+            'cherry_blossom': { emoji: '🌸', value: 'Spring' },
+            'sunny': { emoji: '☀️', value: 'Summer' },
+            'maple_leaf': { emoji: '🍁', value: 'Fall' },
+            'snowflake': { emoji: '❄️', value: 'Winter' }
         };
 
         const countryFlags = {
@@ -137,7 +474,7 @@
             'DE': '🇩🇪',
             'ES': '🇪🇸'
         };
-       const dropdownOptions = [
+        const dropdownOptions = [
             "Rejection Reason",
             "Ratio Fit",
             "ASIN Inventory",
@@ -202,80 +539,82 @@
             "Product Image"
         ];
 
-        function updateTallyCounters() {
-            let upCount = 0;
-            let downCount = 0;
-            
-            Object.values(imageReactions).forEach(reaction => {
-                if (reaction.reaction === 'thumbs up') upCount++;
-                if (reaction.reaction === 'thumbs down') downCount++;
+        const ratioButtons = document.querySelectorAll('.ratioButton');
+        ratioButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                currentAspectRatio = this.getAttribute('data-ratio');
+                ratioButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                const mediaWrappers = document.querySelectorAll('.mediaWrapper');
+                mediaWrappers.forEach(wrapper => {
+                    wrapper.classList.remove('ratio-9-16', 'ratio-4-5', 'ratio-1-1', 'ratio-16-9');
+                    wrapper.classList.add(`ratio-${currentAspectRatio.replace(':', '-')}`);
+                });
             });
+        });
+        const safeZonesButton = document.getElementById('safeZonesButton');
+        safeZonesButton.addEventListener('click', function() {
+            safeZonesVisible = !safeZonesVisible;
+            this.classList.toggle('active');
             
-            document.getElementById('thumbsUpCount').textContent = upCount;
-            document.getElementById('thumbsDownCount').textContent = downCount;
-            
-            thumbsUpCount = upCount;
-            thumbsDownCount = downCount;
-        }
-
-        function generateCustomFilename(aci, country, mediaUrl) {
-            const originalExtension = mediaUrl.split('.').pop().toLowerCase();
-            const countryCode = country || 'NA';
-            return `${countryCode}.${aci}.${originalExtension}`;
-        }
-
-        function getMediaType(url) {
-            const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.wmv', '.m4v', '.mpg', '.mpeg'];
-            const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-            const urlLower = url.toLowerCase();
-            
-            if (videoExtensions.some(ext => urlLower.endsWith(ext))) {
-                return 'video';
-            }
-            if (imageExtensions.some(ext => urlLower.endsWith(ext))) {
-                return 'image';
-            }
-            if (urlLower.includes('youtube.com') || urlLower.includes('vimeo.com')) {
-                return 'video';
-            }
-            return 'image';
-        }
-      function calculateAspectRatio(width, height) {
-            const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
-            const divisor = gcd(width, height);
-            const simplifiedWidth = width / divisor;
-            const simplifiedHeight = height / divisor;
-            
-            const ratio = width / height;
-            if (Math.abs(ratio - 16/9) < 0.01) return "16:9";
-            if (Math.abs(ratio - 9/16) < 0.01) return "9:16";
-            if (Math.abs(ratio - 4/5) < 0.01) return "4:5";
-            if (Math.abs(ratio - 1) < 0.01) return "1:1";
-            
-            return `${simplifiedWidth}:${simplifiedHeight}`;
-        }
-
-        function getAspectRatio(mediaElement) {
-            return new Promise((resolve) => {
-                if (mediaElement instanceof HTMLImageElement) {
-                    if (mediaElement.complete) {
-                        resolve(calculateAspectRatio(mediaElement.naturalWidth, mediaElement.naturalHeight));
-                    } else {
-                        mediaElement.onload = () => resolve(calculateAspectRatio(mediaElement.naturalWidth, mediaElement.naturalHeight));
-                    }
-                } else if (mediaElement instanceof HTMLVideoElement) {
-                    if (mediaElement.videoWidth) {
-                        resolve(calculateAspectRatio(mediaElement.videoWidth, mediaElement.videoHeight));
-                    } else {
-                        mediaElement.onloadedmetadata = () => resolve(calculateAspectRatio(mediaElement.videoWidth, mediaElement.videoHeight));
-                    }
-                }
+            const overlays = document.querySelectorAll('.safeZonesOverlay');
+            overlays.forEach(overlay => {
+                overlay.classList.toggle('visible', safeZonesVisible);
             });
-        }
+        });
 
-        function updateSeasonSelection(mediaUrl, season) {
-            imageReactions[mediaUrl].season = season === 'Select season' ? '' : season;
-        }
+        const reviewToggleButton = document.getElementById('reviewToggleButton');
+        reviewToggleButton.addEventListener('click', function() {
+            reviewSectionVisible = !reviewSectionVisible;
+            this.classList.toggle('active');
+            
+            const reviewSections = document.querySelectorAll('.reviewSection');
+            reviewSections.forEach(section => {
+                section.classList.toggle('hidden', !reviewSectionVisible);
+            });
+        });
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const content = e.target.result;
+                    const lines = content.split('\n');
+                    imageCount = 0;
+                    imageReactions = {};
+                    thumbsUpCount = 0;
+                    thumbsDownCount = 0;
+                    document.getElementById('imageArea').innerHTML = '';
+                    lines.slice(1).forEach(line => {
+                        const [aci, category, image, mediaLink, country, reaction] = line.split(',').map(item => item.trim());
+                        if (aci && category && image && mediaLink) {
+                            displayMedia(aci, category, image, mediaLink, country, reaction);
+                        }
+                    });
+                    updateTallyCounters();
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        document.getElementById('downloadCsv').addEventListener('click', function() {
+            let csvContent = "data:text/csv;charset=utf-8,aci,Category,Image,Media Link,Country,Reaction,Season,Dropdown Selection,Second Dropdown Selection,Comments,Image Type\n";
+            for (let mediaUrl in imageReactions) {
+                const record = imageReactions[mediaUrl];
+                // Escape the pipe-delimited seasons if they contain commas
+                const escapedSeasons = record.season.includes(',') ? `"${record.season}"` : record.season;
+                csvContent += `${record.aci},${record.category},${record.image},${mediaUrl},${record.country},${record.reaction},${escapedSeasons},${record.dropdownSelection},${record.secondDropdownSelection},${record.comments},${record.imageType}\n`;
+            }
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "media_reactions.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
 
         function displayMedia(aci, category, image, mediaUrl, country, initialReaction) {
             imageCount++;
@@ -304,7 +643,8 @@
             
             const mediaWrapper = document.createElement('div');
             mediaWrapper.className = `mediaWrapper ratio-${currentAspectRatio.replace(':', '-')}`;
- const mediaType = getMediaType(mediaUrl);
+            
+            const mediaType = getMediaType(mediaUrl);
             let mediaElement;
             
             if (mediaType === 'video') {
@@ -362,7 +702,6 @@
                 typeIndicator.textContent = 'IMAGE';
                 mediaWrapper.appendChild(typeIndicator);
             }
-
             const overlay = document.createElement('img');
             overlay.src = 'https://www.jonloomer.com/wp-content/uploads/2022/12/safezones-combo-08172023.png';
             overlay.className = `safeZonesOverlay ${safeZonesVisible ? 'visible' : ''}`;
@@ -372,7 +711,8 @@
             errorMessage.className = 'mediaError';
             errorMessage.textContent = 'Media not available';
             errorMessage.style.display = 'none';
-          mediaElement.onload = mediaElement.onloadeddata = function() {
+            
+            mediaElement.onload = mediaElement.onloadeddata = function() {
                 errorMessage.style.display = 'none';
             };
             
@@ -439,30 +779,25 @@
 
             mediaLinksContainer.appendChild(thumbsButtons);
             mediaLinksContainer.appendChild(linksArea);
-            
             const reviewSection = document.createElement('div');
             reviewSection.className = `reviewSection ${!reviewSectionVisible ? 'hidden' : ''}`;
             
             const reactionButtons = document.createElement('div');
             reactionButtons.className = 'reactionButtons';
-          // Season Dropdown
-            const seasonDropdown = document.createElement('div');
-            seasonDropdown.className = 'dropdown';
-            const seasonSelect = document.createElement('select');
-            seasonSelect.className = 'seasonSelect';
-            seasonSelect.onchange = (e) => updateSeasonSelection(mediaUrl, e.target.value);
-
-            Object.entries(seasonMapping).forEach(([key, value]) => {
-                const optionElement = document.createElement('option');
-                optionElement.value = key;
-                optionElement.textContent = value;
-                seasonSelect.appendChild(optionElement);
+            
+            const seasonButtons = document.createElement('div');
+            seasonButtons.className = 'seasonButtons';
+            
+           Object.entries(seasonMapping).forEach(([key, {emoji, value}]) => {
+                const seasonButton = document.createElement('button');
+                seasonButton.textContent = emoji;
+                seasonButton.className = 'season';
+                seasonButton.onclick = () => selectSeason(mediaUrl, value, seasonButton);
+                seasonButtons.appendChild(seasonButton);
             });
-
-            seasonDropdown.appendChild(seasonSelect);
-            reactionButtons.appendChild(seasonDropdown);
-
-            // First Dropdown
+            
+            reactionButtons.appendChild(seasonButtons);
+            
             const dropdown = document.createElement('div');
             dropdown.className = 'dropdown';
             const select = document.createElement('select');
@@ -477,7 +812,6 @@
             
             dropdown.appendChild(select);
 
-            // Second Dropdown
             const secondDropdown = document.createElement('div');
             secondDropdown.className = 'dropdown';
             const secondSelect = document.createElement('select');
@@ -492,7 +826,6 @@
             
             secondDropdown.appendChild(secondSelect);
 
-            // Image Type Dropdown
             const imageTypeDropdown = document.createElement('div');
             imageTypeDropdown.className = 'dropdown';
             const imageTypeSelect = document.createElement('select');
@@ -507,7 +840,6 @@
             
             imageTypeDropdown.appendChild(imageTypeSelect);
 
-            // Comment Section
             const commentSection = document.createElement('div');
             commentSection.className = 'commentSection';
             const commentLabel = document.createElement('div');
@@ -518,7 +850,8 @@
             
             commentSection.appendChild(commentLabel);
             commentSection.appendChild(textarea);
-          reviewSection.appendChild(reactionButtons);
+            
+            reviewSection.appendChild(reactionButtons);
             reviewSection.appendChild(dropdown);
             reviewSection.appendChild(secondDropdown);
             reviewSection.appendChild(imageTypeDropdown);
@@ -532,17 +865,17 @@
             imageArea.appendChild(container);
             
             imageReactions[mediaUrl] = { 
-                aci: aci,
-                category: category,
-                image: image,
-                country: country || '',
-                reaction: initialReaction || 'No reaction',
-                season: '',
-                dropdownSelection: 'Select an option',
-                secondDropdownSelection: 'Select a category',
-                imageType: 'Select image type',
-                comments: ''
-            };
+                 aci: aci,
+                    category: category,
+                    image: image,
+                    country: country || '',
+                    reaction: initialReaction || 'No reaction',
+                    season: '',  // This will now be a comma-separated string
+                    dropdownSelection: 'Select an option',
+                    secondDropdownSelection: 'Select a category',
+                    imageType: 'Select image type',
+                    comments: ''
+                };
 
             if (initialReaction) {
                 if (initialReaction.toLowerCase() === 'thumbs up') {
@@ -566,6 +899,23 @@
             updateTallyCounters();
         }
 
+       function selectSeason(mediaUrl, season, selectedButton) {
+            selectedButton.classList.toggle('selected');
+            
+            let currentSeasons = imageReactions[mediaUrl].season ? imageReactions[mediaUrl].season.split(' | ') : [];
+            
+            if (selectedButton.classList.contains('selected')) {
+                if (!currentSeasons.includes(season)) {
+                    currentSeasons.push(season);
+                }
+            } else {
+                currentSeasons = currentSeasons.filter(s => s !== season);
+            }
+            
+            imageReactions[mediaUrl].season = currentSeasons.join(' | ');
+        }
+
+
         function updateDropdownSelection(mediaUrl, selection) {
             imageReactions[mediaUrl].dropdownSelection = selection;
         }
@@ -581,83 +931,6 @@
         function updateComments(mediaUrl, comment) {
             imageReactions[mediaUrl].comments = comment.replace(/,/g, ';');
         }
-
-        // Event Listeners for the buttons
-        const ratioButtons = document.querySelectorAll('.ratioButton');
-        ratioButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                currentAspectRatio = this.getAttribute('data-ratio');
-                ratioButtons.forEach(btn => btn.classList.remove('active'));
-                this.classList.add('active');
-                
-                const mediaWrappers = document.querySelectorAll('.mediaWrapper');
-                mediaWrappers.forEach(wrapper => {
-                    wrapper.classList.remove('ratio-9-16', 'ratio-4-5', 'ratio-1-1', 'ratio-16-9');
-                    wrapper.classList.add(`ratio-${currentAspectRatio.replace(':', '-')}`);
-                });
-            });
-        });
-
-        const safeZonesButton = document.getElementById('safeZonesButton');
-        safeZonesButton.addEventListener('click', function() {
-            safeZonesVisible = !safeZonesVisible;
-            this.classList.toggle('active');
-            
-            const overlays = document.querySelectorAll('.safeZonesOverlay');
-            overlays.forEach(overlay => {
-                overlay.classList.toggle('visible', safeZonesVisible);
-            });
-        });
-
-        const reviewToggleButton = document.getElementById('reviewToggleButton');
-        reviewToggleButton.addEventListener('click', function() {
-            reviewSectionVisible = !reviewSectionVisible;
-            this.classList.toggle('active');
-            
-            const reviewSections = document.querySelectorAll('.reviewSection');
-            reviewSections.forEach(section => {
-                section.classList.toggle('hidden', !reviewSectionVisible);
-            });
-        });
-
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const content = e.target.result;
-                    const lines = content.split('\n');
-                    imageCount = 0;
-                    imageReactions = {};
-                    thumbsUpCount = 0;
-                    thumbsDownCount = 0;
-                    document.getElementById('imageArea').innerHTML = '';
-                    lines.slice(1).forEach(line => {
-                        const [aci, category, image, mediaLink, country, reaction] = line.split(',').map(item => item.trim());
-                        if (aci && category && image && mediaLink) {
-                            displayMedia(aci, category, image, mediaLink, country, reaction);
-                        }
-                    });
-                    updateTallyCounters();
-                };
-                reader.readAsText(file);
-            }
-        });
-
-        document.getElementById('downloadCsv').addEventListener('click', function() {
-            let csvContent = "data:text/csv;charset=utf-8,aci,Category,Image,Media Link,Country,Reaction,Season,Dropdown Selection,Second Dropdown Selection,Comments,Image Type\n";
-            for (let mediaUrl in imageReactions) {
-                const record = imageReactions[mediaUrl];
-                csvContent += `${record.aci},${record.category},${record.image},${mediaUrl},${record.country},${record.reaction},${record.season},${record.dropdownSelection},${record.secondDropdownSelection},${record.comments},${record.imageType}\n`;
-            }
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "media_reactions.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        });
     </script>
 </body>
 </html>
