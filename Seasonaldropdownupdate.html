@@ -541,7 +541,7 @@
             const missingHeaders = expectedHeaders.filter(h => !headers.includes(h));
             if (missingHeaders.length > 0) {
                 throw new Error(`Missing required headers: ${missingHeaders.join(', ')}`);
-               }
+            }
 
             // Validate each line
             lines.slice(1).forEach((line, index) => {
@@ -925,7 +925,7 @@
                             a.style.display = 'none';
                             a.href = url;
                             a.download = customFilename;
-                            document.body.appendChild(a)(a);
+                            document.body.appendChild(a);
                             a.click();
                             window.URL.revokeObjectURL(url);
                             document.body.removeChild(a);
