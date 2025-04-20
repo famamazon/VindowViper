@@ -22,10 +22,6 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             z-index: 1000;             
         }
-        #tallyCounter, .controlsContainer, #mainContent, .imageContainer, 
-        .mediaWrapper, .reviewSection, .reactionButtons {
-            box-sizing: border-box;
-        }
         #tallyCounter {
             background-color: #f0f0f0;
             padding: 10px;
@@ -34,6 +30,25 @@
             display: flex;
             justify-content: center;
             gap: 20px;
+        }
+        .tallyItem {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .tallyEmoji {
+            font-size: 1.2em;
+        }
+        .tallyCount {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        #mainContent {
+            margin-top: 220px;
+            padding: 20px;
+        }
+        #inputArea, #imageArea {
+            margin-bottom: 20px;
         }
         .controlsContainer {
             display: flex;
@@ -76,10 +91,6 @@
         #reviewToggleButton.active {
             background-color: #2196F3;
             color: white;
-        }
-        #mainContent {
-            margin-top: 220px;
-            padding: 20px;
         }
         #imageArea {
             display: flex;
@@ -215,17 +226,6 @@
             gap: 10px;
             margin: 0;
         }
-        .dropdown {
-            margin-top: 10px;
-            width: 100%;
-        }
-        .dropdown select {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 5px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-        }
         .seasonSelect {
             padding: 5px 10px;
             font-size: 1em;
@@ -238,6 +238,17 @@
         }
         .seasonSelect option {
             padding: 5px;
+        }
+        .dropdown {
+            margin-top: 10px;
+            width: 100%;
+        }
+        .dropdown select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
         }
         .reactionButtons button {
             margin: 0 5px;
@@ -457,6 +468,7 @@
             "Collage",
             "Product Image"
         ];
+
         function updateTallyCounters() {
             let upCount = 0;
             let downCount = 0;
@@ -474,3 +486,251 @@
         }
 
         function generateCustomFilename(aci, country, mediaUrl) {
+            const originalExtension = mediaUrl.split('.').pop().toLowerCase();
+            const countryCode = country || 'NA';
+            return `${countryCode}.${aci}.${originalExtension}`;
+        }
+
+        function getMediaType(url) {
+            const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.wmv', '.m4v', '.mpg', '.mpeg'];
+            const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+            const urlLower = url.toLowerCase();
+            
+            if (videoExtensions.some(ext => urlLower.endsWith(ext))) {
+                return 'video';
+            }
+            if (imageExtensions.some(ext => urlLower.endsWith(ext))) {
+                return 'image';
+            }
+            if (urlLower.includes('youtube.com') || urlLower.includes('vimeo.com')) {
+                return 'video';
+            }
+            return 'image';
+        }
+
+        function calculateAspectRatio(width, height) {
+            const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+            const divisor = gcd(width, height);
+            const simplifiedWidth = width / divisor;
+            const simplifiedHeight = height / divisor;
+            
+            const ratio = width / height;
+            if (Math.abs(ratio - 16/9) < 0.01) return "16:9";
+            if (Math.abs(ratio - 9/16) < 0.01) return "9:16";
+            if (Math.abs(ratio - 4/5) < 0.01) return "4:5";
+            if (Math.abs(ratio - 1) < 0.01) return "1:1";
+            
+            return `${simplifiedWidth}:${simplifiedHeight}`;
+        }
+
+        function getAspectRatio(mediaElement) {
+            return new Promise((resolve) => {
+                if (mediaElement instanceof HTMLImageElement) {
+                    if (mediaElement.complete) {
+                        resolve(calculateAspectRatio(mediaElement.naturalWidth, mediaElement.naturalHeight));
+                    } else {
+                        mediaElement.onload = () => resolve(calculateAspectRatio(mediaElement.naturalWidth, mediaElement.naturalHeight));
+                    }
+                } else if (mediaElement instanceof HTMLVideoElement) {
+                    if (mediaElement.videoWidth) {
+                        resolve(calculateAspectRatio(mediaElement.videoWidth, mediaElement.videoHeight));
+                    } else {
+                        mediaElement.onloadedmetadata = () => resolve(calculateAspectRatio(mediaElement.videoWidth, mediaElement.videoHeight));
+                    }
+                }
+            });
+        }
+
+        function updateSeasonSelection(mediaUrl, season) {
+            imageReactions[mediaUrl].season = season === 'Select season' ? '' : season;
+        }
+
+        function displayMedia(aci, category, amazonUrl, mediaUrl, country, initialReaction) {
+            imageCount++;
+            const imageArea = document.getElementById('imageArea');
+            const container = document.createElement('div');
+            container.className = 'imageContainer';
+            
+            const headerContainer = document.createElement('div');
+            headerContainer.className = 'imageHeader';
+
+            if (country && countryFlags[country]) {
+                const flagSpan = document.createElement('span');
+                flagSpan.className = 'countryFlag';
+                flagSpan.textContent = countryFlags[country];
+                headerContainer.appendChild(flagSpan);
+            }
+
+            const numberElement = document.createElement('div');
+            numberElement.className = 'imageNumber';
+            numberElement.textContent = `Media ${imageCount}`;
+            headerContainer.appendChild(numberElement);
+
+            const categoryElement = document.createElement('div');
+            categoryElement.className = 'imageCategory';
+            categoryElement.textContent = category;
+            
+            const mediaWrapper = document.createElement('div');
+            mediaWrapper.className = `mediaWrapper ratio-${currentAspectRatio.replace(':', '-')}`;
+            
+            const mediaType = getMediaType(mediaUrl);
+            let mediaElement;
+            
+            if (mediaType === 'video') {
+                mediaElement = document.createElement('video');
+                mediaElement.src = mediaUrl;
+                mediaElement.controls = false;
+                mediaElement.loop = true;
+                mediaElement.muted = true;
+                
+                const videoControls = document.createElement('div');
+                videoControls.className = 'videoControls';
+                
+                const playPauseBtn = document.createElement('button');
+                playPauseBtn.textContent = '▶️';
+                playPauseBtn.onclick = () => {
+                    if (mediaElement.paused) {
+                        mediaElement.play();
+                        playPauseBtn.textContent = '⏸️';
+                    } else {
+                        mediaElement.pause();
+                        playPauseBtn.textContent = '▶️';
+                    }
+                };
+                
+                const muteBtn = document.createElement('button');
+                muteBtn.textContent = '🔇';
+                muteBtn.onclick = () => {
+                    mediaElement.muted = !mediaElement.muted;
+                    muteBtn.textContent = mediaElement.muted ? '🔇' : '🔊';
+                };
+                
+                const originalRatioSpan = document.createElement('span');
+                originalRatioSpan.className = 'originalRatio';
+                
+                videoControls.appendChild(playPauseBtn);
+                videoControls.appendChild(muteBtn);
+                videoControls.appendChild(originalRatioSpan);
+                mediaWrapper.appendChild(videoControls);
+
+                const typeIndicator = document.createElement('div');
+                typeIndicator.className = 'mediaType';
+                typeIndicator.textContent = 'VIDEO';
+                mediaWrapper.appendChild(typeIndicator);
+
+                getAspectRatio(mediaElement).then(ratio => {
+                    originalRatioSpan.textContent = ratio;
+                });
+            } else {
+                mediaElement = document.createElement('img');
+                mediaElement.src = mediaUrl;
+                mediaElement.alt = `Media ${imageCount}`;
+
+                const typeIndicator = document.createElement('div');
+                typeIndicator.className = 'mediaType';
+                typeIndicator.textContent = 'IMAGE';
+                mediaWrapper.appendChild(typeIndicator);
+            }
+
+            const overlay = document.createElement('img');
+            overlay.src = 'https://www.jonloomer.com/wp-content/uploads/2022/12/safezones-combo-08172023.png';
+            overlay.className = `safeZonesOverlay ${safeZonesVisible ? 'visible' : ''}`;
+            overlay.alt = 'Safe Zones Overlay';
+            
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'mediaError';
+            errorMessage.textContent = 'Media not available';
+            errorMessage.style.display = 'none';
+            
+            mediaElement.onload = mediaElement.onloadeddata = function() {
+                errorMessage.style.display = 'none';
+            };
+            
+            mediaElement.onerror = function() {
+                this.style.display = 'none';
+                errorMessage.style.display = 'block';
+            };
+            
+            mediaWrapper.appendChild(mediaElement);
+            mediaWrapper.appendChild(overlay);
+            mediaWrapper.appendChild(errorMessage);
+            
+            const mediaLinksContainer = document.createElement('div');
+            mediaLinksContainer.className = 'mediaLinksContainer';
+
+            const thumbsButtons = document.createElement('div');
+            thumbsButtons.className = 'thumbsButtons';
+            
+            const thumbsUp = document.createElement('button');
+            thumbsUp.textContent = '👍';
+            thumbsUp.className = 'thumbsUp';
+            thumbsUp.onclick = () => react(mediaUrl, 'thumbs up', thumbsUp, thumbsDown);
+            
+            const thumbsDown = document.createElement('button');
+            thumbsDown.textContent = '👎';
+            thumbsDown.className = 'thumbsDown';
+            thumbsDown.onclick = () => react(mediaUrl, 'thumbs down', thumbsDown, thumbsUp);
+            
+            thumbsButtons.appendChild(thumbsUp);
+            thumbsButtons.appendChild(thumbsDown);
+
+            const linksArea = document.createElement('div');
+            linksArea.className = 'linksArea';
+            
+            const link = document.createElement('a');
+            link.href = amazonUrl;
+            link.textContent = 'LINK';
+            link.target = '_blank';
+            linksArea.appendChild(link);
+
+            if (mediaType === 'video') {
+                const downloadLink = document.createElement('a');
+                downloadLink.href = mediaUrl;
+                downloadLink.textContent = 'DOWNLOAD';
+                const customFilename = generateCustomFilename(aci, country, mediaUrl);
+                downloadLink.onclick = (e) => {
+                    e.preventDefault();
+                    fetch(mediaUrl)
+                        .then(response => response.blob())
+                        .then(blob => {
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.style.display = 'none';
+                            a.href = url;
+                            a.download = customFilename;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+                        });
+                };
+                linksArea.appendChild(downloadLink);
+            }
+
+            mediaLinksContainer.appendChild(thumbsButtons);
+            mediaLinksContainer.appendChild(linksArea);
+
+            const reviewSection = document.createElement('div');
+            reviewSection.className = `reviewSection ${!reviewSectionVisible ? 'hidden' : ''}`;
+            
+            const reactionButtons = document.createElement('div');
+            reactionButtons.className = 'reactionButtons';
+            
+            // Season Dropdown
+            const seasonDropdown = document.createElement('div');
+            seasonDropdown.className = 'dropdown';
+            const seasonSelect = document.createElement('select');
+            seasonSelect.className = 'seasonSelect';
+            seasonSelect.onchange = (e) => updateSeasonSelection(mediaUrl, e.target.value);
+
+            Object.entries(seasonMapping).forEach(([key, value]) => {
+                const optionElement = document.createElement('option');
+                optionElement.value = key;
+                optionElement.textContent = value;
+                seasonSelect.appendChild(optionElement);
+            });
+
+            seasonDropdown.appendChild(seasonSelect);
+            reactionButtons.appendChild(seasonDropdown);
+            
+            const dropdown = 
