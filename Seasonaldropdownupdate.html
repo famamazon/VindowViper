@@ -22,10 +22,6 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             z-index: 1000;             
         }
-        #tallyCounter, .controlsContainer, #mainContent, .imageContainer, 
-        .mediaWrapper, .reviewSection, .reactionButtons {
-            box-sizing: border-box;
-        }
         #tallyCounter {
             background-color: #f0f0f0;
             padding: 10px;
@@ -128,6 +124,7 @@
             align-items: center;
             overflow: hidden;
             transition: padding-top 0.3s ease;
+            cursor: pointer;
         }
         .mediaWrapper.ratio-9-16 {
             padding-top: 177.78%;
@@ -152,13 +149,24 @@
         .mediaWrapper video {
             background: #000;
         }
+        .videoThumbnail {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: white;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+            pointer-events: none;
+            z-index: 1;
+        }
         .videoControls {
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -349,16 +357,7 @@
         .titleLogo {
             width: 128px;
             height: 96px;
-            margin-right: 20px;
-            vertical-align: middle;
-        }
-        #headerSection h1 {
-            display: flex;
-            align-items: center;
-        }
-    </style>
-</head>
-<body>
+            margin-right: 20px;<body>
     <div id="headerSection">
         <h1><img src="https://static.wikia.nocookie.net/animaniacs/images/1/1f/The_Viper_silhouette.jpg/revision/latest?cb=20220810225021" alt="Vindow_Viper" class="titleLogo">Vindow Viper</h1>
         
@@ -394,6 +393,96 @@
     </div>
 
     <script>
+
+            vertical-align: middle;
+        }
+        #headerSection h1 {
+            display: flex;
+            align-items: center;
+        }
+    </style>
+</head>
+        let imageCount = 0;
+        let imageReactions = {};
+        let currentAspectRatio = '9:16';
+        let safeZonesVisible = false;
+        let reviewSectionVisible = true;
+        let thumbsUpCount = 0;
+        let thumbsDownCount = 0;
+
+        const seasonMapping = {
+            'Select season': '',  // Default option
+            'Spring': '🌸 Spring',
+            'Summer': '☀️ Summer',
+            'Fall': '🍁 Fall',
+            'Winter': '❄️ Winter'
+        };
+
+        const countryFlags = {
+            'UK': '🇬🇧',
+            'IT': '🇮🇹',
+            'FR': '🇫🇷',
+            'DE': '🇩🇪',
+            'ES': '🇪🇸'
+        };
+
+        const dropdownOptions = [
+            "Rejection Reason",
+            "Ratio Fit",
+            "ASIN Inventory",
+            "Original Image",
+            "Price Message",
+            "MINOR Present",
+            "Text Overlay",
+            "ASINs in Order??",
+            "Explicit Nudity",
+            "Partial Nudity",
+            "Sexual Situations",
+            "Violence",
+            "Visually Disturbing",
+            "Rude Gestures",
+            "Drugs",
+            "Tobacco",
+            "Vaping",
+            "Alcohol",
+            "Gambling",
+            "Hate Speech / Symbols",
+            "Guns",
+            "Profanity",
+            "Lingerie / Swimwear"
+        ];
+
+        const secondDropdownOptions = [
+            "Interest Category",
+            "APB | Amazon Private Brands",
+            "Beauty | Beauty",
+            "Beauty | Makeup",
+            "Beauty | Nails",
+            "Beauty | Skin Care",
+            "Fashion | Men's Style",
+            "Fashion | Wedding",
+            "Fashion | Women's style",
+            "Hardlines | Coffee Making",
+            "Hardlines | Electronics",
+            "Hardlines | Gaming",
+            "Hardlines | Garden & Outdoor",
+            "Hardlines | Home Interior",
+            "Hardlines | Indoor Plants",
+            "Hardlines | Licensing (HL) Star Wars",
+            "Hardlines | Storage and Organization",
+            "Hardlines | Work From Home",
+            "Pets | Cats",
+            "Pets | Dogs",
+            "Pets | Pets",
+            "X-PF | Fitness, Running, Hiking",
+            "X-PF | Healthy Lifestyle",
+            "X-PF | Hiking",
+            "X-PF | Kitchen & Cooking",
+            "X-PF | Parenting",
+            "X-PF | Running",
+            "X-PF | Travel, Camping"
+        ];
+
         const imageTypeOptions = [
             "Image Type",
             "Lifestyle",
@@ -402,14 +491,16 @@
             "Product Image"
         ];
 
-        function showLoading(show) {
+        function showLoading(show, message = 'Processing...') {
             const existing = document.querySelector('.loading-indicator');
             if (show) {
                 if (!existing) {
                     const loader = document.createElement('div');
                     loader.className = 'loading-indicator';
-                    loader.textContent = 'Loading media files...';
+                    loader.textContent = message;
                     document.body.appendChild(loader);
+                } else {
+                    existing.textContent = message;
                 }
             } else if (existing) {
                 existing.remove();
@@ -417,10 +508,29 @@
         }
 
         function updateProgress(current, total) {
-            const existing = document.querySelector('.loading-indicator');
-            if (existing) {
-                existing.textContent = `Processing media ${current} of ${total}...`;
+            showLoading(true, `Processing media ${current} of ${total}...`);
+        }
+
+        function formatCategory(category) {
+            if (!category) return '';
+            
+            // Remove GL_UPDATE_REQUIRED and trim
+            category = category.split('=')[0].trim();
+            
+            // Handle gl_ prefixed categories
+            if (category.toLowerCase().startsWith('gl_')) {
+                return category
+                    .substring(3)                    // Remove 'gl_'
+                    .split('_')                      // Split by underscore
+                    .map(word =>                     // For each word
+                        word.charAt(0).toUpperCase() // Capitalize first letter
+                        + word.slice(1).toLowerCase() // Rest lowercase
+                    )
+                    .join(' ');                      // Join with spaces
             }
+            
+            // Handle pipe-separated categories
+            return category.split('|').map(part => part.trim()).join(' | ');
         }
 
         function validateCSV(lines) {
@@ -431,7 +541,7 @@
             const missingHeaders = expectedHeaders.filter(h => !headers.includes(h));
             if (missingHeaders.length > 0) {
                 throw new Error(`Missing required headers: ${missingHeaders.join(', ')}`);
-            }
+               }
 
             // Validate each line
             lines.slice(1).forEach((line, index) => {
@@ -491,8 +601,10 @@
             const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
             const urlLower = url.trim().toLowerCase();
             
-            // Check for video streaming URLs
-            if (urlLower.includes('vse-vms-transcoding')) {
+            // Check for Amazon video streaming URLs
+            if (urlLower.includes('vse-vms-transcoding') || 
+                urlLower.includes('jobtemplate.mp4') || 
+                urlLower.endsWith('.mp4.480.mp4')) {
                 return 'video';
             }
             
@@ -501,9 +613,6 @@
             }
             if (imageExtensions.some(ext => urlLower.endsWith(ext))) {
                 return 'image';
-            }
-            if (urlLower.includes('youtube.com') || urlLower.includes('vimeo.com')) {
-                return 'video';
             }
             return 'image';
         }
@@ -578,6 +687,7 @@
         function updateComments(mediaUrl, comment) {
             imageReactions[mediaUrl].comments = comment.replace(/,/g, ';');
         }
+
         function displayMedia(aci, category, amazonUrl, mediaUrl, country, initialReaction) {
             imageCount++;
             const imageArea = document.getElementById('imageArea');
@@ -586,9 +696,6 @@
             
             const headerContainer = document.createElement('div');
             headerContainer.className = 'imageHeader';
-
-            // Clean up category by removing any GL_UPDATE_REQUIRED
-            const cleanCategory = category.split('=')[0].trim();
 
             if (country && countryFlags[country]) {
                 const flagSpan = document.createElement('span');
@@ -604,7 +711,7 @@
 
             const categoryElement = document.createElement('div');
             categoryElement.className = 'imageCategory';
-            categoryElement.textContent = cleanCategory;
+            categoryElement.textContent = category;
             
             const mediaWrapper = document.createElement('div');
             mediaWrapper.className = `mediaWrapper ratio-${currentAspectRatio.replace(':', '-')}`;
@@ -616,8 +723,20 @@
                 mediaElement = document.createElement('video');
                 mediaElement.src = sanitizeUrl(mediaUrl);
                 mediaElement.controls = false;
-                mediaElement.loop = true;
+                mediaElement.loop = false;
                 mediaElement.muted = true;
+                mediaElement.crossOrigin = "anonymous";
+                mediaElement.playsInline = true;
+                
+                // Set poster image for videos
+                const posterUrl = mediaUrl.split('?')[0].replace(/\.mp4\.480\.mp4$/, '.jpg');
+                mediaElement.setAttribute('poster', posterUrl);
+                
+                // Add play indicator overlay
+                const playIndicator = document.createElement('div');
+                playIndicator.className = 'videoThumbnail';
+                playIndicator.textContent = '▶️';
+                mediaWrapper.appendChild(playIndicator);
                 
                 const videoControls = document.createElement('div');
                 videoControls.className = 'videoControls';
@@ -627,48 +746,73 @@
                 controlsWrapper.style.gap = '10px';
                 controlsWrapper.style.alignItems = 'center';
 
+                // Play/Pause button
                 const playPauseBtn = document.createElement('button');
                 playPauseBtn.textContent = '▶️';
                 playPauseBtn.title = 'Play/Pause';
-                playPauseBtn.onclick = () => {
+                playPauseBtn.onclick = (e) => {
+                    e.stopPropagation();
                     if (mediaElement.paused) {
+                        // Stop all other videos first
+                        document.querySelectorAll('video').forEach(video => {
+                            if (video !== mediaElement && !video.paused) {
+                                video.pause();
+                                const otherControls = video.parentElement.querySelector('.videoControls');
+                                if (otherControls) {
+                                    const btn = otherControls.querySelector('button');
+                                    if (btn) btn.textContent = '▶️';
+                                }
+                                // Show play indicator for paused videos
+                                const otherIndicator = video.parentElement.querySelector('.videoThumbnail');
+                                if (otherIndicator) otherIndicator.style.display = 'block';
+                            }
+                        });
+                        
                         mediaElement.play();
                         playPauseBtn.textContent = '⏸️';
+                        playIndicator.style.display = 'none';
                     } else {
                         mediaElement.pause();
                         playPauseBtn.textContent = '▶️';
+                        playIndicator.style.display = 'block';
                     }
                 };
-                
+
+                // Mute button
                 const muteBtn = document.createElement('button');
                 muteBtn.textContent = '🔇';
                 muteBtn.title = 'Mute/Unmute';
-                muteBtn.onclick = () => {
+                muteBtn.onclick = (e) => {
+                    e.stopPropagation();
                     mediaElement.muted = !mediaElement.muted;
                     muteBtn.textContent = mediaElement.muted ? '🔇' : '🔊';
                 };
 
+                // Speed control
                 const speedBtn = document.createElement('button');
                 speedBtn.textContent = '1x';
                 speedBtn.title = 'Playback Speed';
-                speedBtn.onclick = () => {
+                speedBtn.onclick = (e) => {
+                    e.stopPropagation();
                     const speeds = [0.5, 1, 1.5, 2];
                     const currentIndex = speeds.indexOf(mediaElement.playbackRate);
                     const nextIndex = (currentIndex + 1) % speeds.length;
                     mediaElement.playbackRate = speeds[nextIndex];
                     speedBtn.textContent = speeds[nextIndex] + 'x';
                 };
+
+                controlsWrapper.appendChild(playPauseBtn);
+                controlsWrapper.appendChild(muteBtn);
+                controlsWrapper.appendChild(speedBtn);
                 
                 const originalRatioSpan = document.createElement('span');
                 originalRatioSpan.className = 'originalRatio';
                 
-                controlsWrapper.appendChild(playPauseBtn);
-                controlsWrapper.appendChild(muteBtn);
-                controlsWrapper.appendChild(speedBtn);
                 videoControls.appendChild(controlsWrapper);
                 videoControls.appendChild(originalRatioSpan);
                 mediaWrapper.appendChild(videoControls);
 
+                // Media type indicator
                 const typeIndicator = document.createElement('div');
                 typeIndicator.className = 'mediaType';
                 typeIndicator.textContent = 'VIDEO';
@@ -677,6 +821,29 @@
                 getAspectRatio(mediaElement).then(ratio => {
                     originalRatioSpan.textContent = ratio;
                 });
+
+                // Add click handler to video container
+                mediaWrapper.addEventListener('click', (e) => {
+                    if (e.target === mediaWrapper || e.target === mediaElement) {
+                        playPauseBtn.click();
+                    }
+                });
+
+                // Update loading states
+                mediaElement.addEventListener('loadstart', () => {
+                    playIndicator.textContent = '⌛';
+                });
+
+                mediaElement.addEventListener('canplay', () => {
+                    if (mediaElement.paused) {
+                        playIndicator.textContent = '▶️';
+                    }
+                });
+
+                mediaElement.addEventListener('error', () => {
+                    playIndicator.textContent = '❌';
+                });
+
             } else {
                 mediaElement = document.createElement('img');
                 mediaElement.src = sanitizeUrl(mediaUrl);
@@ -687,13 +854,6 @@
                 typeIndicator.textContent = 'IMAGE';
                 mediaWrapper.appendChild(typeIndicator);
             }
-
-            // Error handling for media loading
-            mediaElement.onerror = function() {
-                this.style.display = 'none';
-                errorMessage.style.display = 'block';
-                errorMessage.innerHTML = `Unable to load media<br><a href="${mediaUrl}" target="_blank">Open directly</a>`;
-            };
 
             const overlay = document.createElement('img');
             overlay.src = 'https://www.jonloomer.com/wp-content/uploads/2022/12/safezones-combo-08172023.png';
@@ -707,6 +867,15 @@
             
             mediaElement.onload = mediaElement.onloadeddata = function() {
                 errorMessage.style.display = 'none';
+            };
+            
+            mediaElement.onerror = function() {
+                this.style.display = 'none';
+                errorMessage.style.display = 'block';
+                errorMessage.innerHTML = `Unable to load media<br>
+                    <a href="${mediaUrl}" target="_blank">Open media directly</a><br>
+                    <small style="color: #666; font-size: 0.8em;">${mediaUrl}</small>`;
+                console.error(`Failed to load media: ${mediaUrl}`);
             };
             
             mediaWrapper.appendChild(mediaElement);
@@ -756,7 +925,7 @@
                             a.style.display = 'none';
                             a.href = url;
                             a.download = customFilename;
-                            document.body.appendChild(a);
+                            document.body.appendChild(a)(a);
                             a.click();
                             window.URL.revokeObjectURL(url);
                             document.body.removeChild(a);
@@ -781,4 +950,238 @@
             seasonSelect.className = 'seasonSelect';
             seasonSelect.onchange = (e) => updateSeasonSelection(mediaUrl, e.target.value);
 
-            Object.entries(seasonMapping).forEach(([key, value
+            Object.entries(seasonMapping).forEach(([key, value]) => {
+                const optionElement = document.createElement('option');
+                optionElement.value = key;
+                optionElement.textContent = value;
+                seasonSelect.appendChild(optionElement);
+            });
+
+            seasonDropdown.appendChild(seasonSelect);
+            reactionButtons.appendChild(seasonDropdown);
+            
+            const dropdown = document.createElement('div');
+            dropdown.className = 'dropdown';
+            const select = document.createElement('select');
+            select.onchange = (e) => updateDropdownSelection(mediaUrl, e.target.value);
+            
+            dropdownOptions.forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option;
+                optionElement.textContent = option;
+                select.appendChild(optionElement);
+            });
+            
+            dropdown.appendChild(select);
+
+            const secondDropdown = document.createElement('div');
+            secondDropdown.className = 'dropdown';
+            const secondSelect = document.createElement('select');
+            secondSelect.onchange = (e) => updateSecondDropdownSelection(mediaUrl, e.target.value);
+            
+            secondDropdownOptions.forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option;
+                optionElement.textContent = option;
+                secondSelect.appendChild(optionElement);
+            });
+            
+            secondDropdown.appendChild(secondSelect);
+
+            const imageTypeDropdown = document.createElement('div');
+            imageTypeDropdown.className = 'dropdown';
+            const imageTypeSelect = document.createElement('select');
+            imageTypeSelect.onchange = (e) => updateImageTypeSelection(mediaUrl, e.target.value);
+            
+            imageTypeOptions.forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option;
+                optionElement.textContent = option;
+                imageTypeSelect.appendChild(optionElement);
+            });
+            
+            imageTypeDropdown.appendChild(imageTypeSelect);
+
+            const commentSection = document.createElement('div');
+            commentSection.className = 'commentSection';
+            const commentLabel = document.createElement('div');
+            commentLabel.textContent = 'Comments:';
+            const textarea = document.createElement('textarea');
+            textarea.placeholder = 'Enter your comments here...';
+            textarea.onchange = (e) => updateComments(mediaUrl, e.target.value);
+            
+            commentSection.appendChild(commentLabel);
+            commentSection.appendChild(textarea);
+            
+            reviewSection.appendChild(reactionButtons);
+            reviewSection.appendChild(dropdown);
+            reviewSection.appendChild(secondDropdown);
+            reviewSection.appendChild(imageTypeDropdown);
+            reviewSection.appendChild(commentSection);
+            
+            container.appendChild(headerContainer);
+            container.appendChild(categoryElement);
+            container.appendChild(mediaWrapper);
+            container.appendChild(mediaLinksContainer);
+            container.appendChild(reviewSection);
+            imageArea.appendChild(container);
+            
+            imageReactions[mediaUrl] = { 
+                aci: aci,
+                category: category,
+                amazonUrl: amazonUrl,
+                country: country || '',
+                reaction: initialReaction || 'No reaction',
+                season: '',
+                dropdownSelection: 'Select an option',
+                secondDropdownSelection: 'Select a category',
+                imageType: 'Select image type',
+                comments: ''
+            };
+
+            if (initialReaction) {
+                if (initialReaction.toLowerCase() === 'thumbs up') {
+                    thumbsUp.classList.add('selected');
+                } else if (initialReaction.toLowerCase() === 'thumbs down') {
+                    thumbsDown.classList.add('selected');
+                }
+                updateTallyCounters();
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                showLoading(true, 'Reading CSV file...');
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const content = e.target.result;
+                        const lines = content.split('\n');
+                        
+                        // Reset counters
+                        imageCount = 0;
+                        imageReactions = {};
+                        thumbsUpCount = 0;
+                        thumbsDownCount = 0;
+                        document.getElementById('imageArea').innerHTML = '';
+                        
+                        const totalLines = lines.length - 1;
+                        showLoading(true, `Processing ${totalLines} items...`);
+
+                        // Process data rows
+                        lines.slice(1).forEach((line, index) => {
+                            if (line.trim()) {
+                                // Split by comma but handle special cases
+                                const row = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                                let [aci, category, amazonUrl, mediaUrl, country, reaction] = row.map(item => 
+                                    item.trim().replace(/^"(.*)"$/, '$1') // Remove quotes if present
+                                );
+                                
+                                // Format category
+                                category = formatCategory(category);
+                                
+                                // Clean up URLs
+                                amazonUrl = amazonUrl.trim();
+                                mediaUrl = mediaUrl.trim();
+                                
+                                if (aci && category && amazonUrl && mediaUrl) {
+                                    displayMedia(aci, category, amazonUrl, mediaUrl, country, reaction);
+                                    updateProgress(index + 1, totalLines);
+                                }
+                            }
+                        });
+                        
+                        showLoading(false);
+                        updateTallyCounters();
+                        
+                    } catch (error) {
+                        console.error('Error processing CSV:', error);
+                        alert('Error processing the CSV file: ' + error.message);
+                        showLoading(false);
+                    }
+                };
+                reader.onerror = function() {
+                    console.error('Error reading file');
+                    alert('Error reading the file.');
+                    showLoading(false);
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        document.getElementById('downloadCsv').addEventListener('click', function() {
+            let csvContent = "data:text/csv;charset=utf-8,aci,Category,Amazon URL,Media URL,Country,Reaction,Season,Dropdown Selection,Second Dropdown Selection,Comments,Image Type\n";
+            for (let mediaUrl in imageReactions) {
+                const record = imageReactions[mediaUrl];
+                const escapedCategory = record.category.includes(',') ? `"${record.category}"` : record.category;
+                const escapedComments = record.comments.includes(',') ? `"${record.comments}"` : record.comments;
+                
+                csvContent += `${record.aci},${escapedCategory},${record.amazonUrl},${mediaUrl},${record.country},${record.reaction},${record.season},${record.dropdownSelection},${record.secondDropdownSelection},${escapedComments},${record.imageType}\n`;
+            }
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "media_reactions.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        const ratioButtons = document.querySelectorAll('.ratioButton');
+        ratioButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                currentAspectRatio = this.getAttribute('data-ratio');
+                ratioButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                const mediaWrappers = document.querySelectorAll('.mediaWrapper');
+                mediaWrappers.forEach(wrapper => {
+                    wrapper.classList.remove('ratio-9-16', 'ratio-4-5', 'ratio-1-1', 'ratio-16-9');
+                    wrapper.classList.add(`ratio-${currentAspectRatio.replace(':', '-')}`);
+                });
+            });
+        });
+
+        const safeZonesButton = document.getElementById('safeZonesButton');
+        safeZonesButton.addEventListener('click', function() {
+            safeZonesVisible = !safeZonesVisible;
+            this.classList.toggle('active');
+            
+            const overlays = document.querySelectorAll('.safeZonesOverlay');
+            overlays.forEach(overlay => {
+                overlay.classList.toggle('visible', safeZonesVisible);
+            });
+        });
+
+        const reviewToggleButton = document.getElementById('reviewToggleButton');
+        reviewToggleButton.addEventListener('click', function() {
+            reviewSectionVisible = !reviewSectionVisible;
+            this.classList.toggle('active');
+            
+            const reviewSections = document.querySelectorAll('.reviewSection');
+            reviewSections.forEach(section => {
+                section.classList.toggle('hidden', !reviewSectionVisible);
+            });
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+            
+            if (e.code === 'Space') {
+                e.preventDefault();
+                const currentVideo = document.querySelector('video:hover');
+                if (currentVideo) {
+                    const playButton = currentVideo.parentElement.querySelector('.videoControls button');
+                    if (playButton) playButton.click();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+</body>
+</html>
+
