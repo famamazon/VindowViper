@@ -22,6 +22,10 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             z-index: 1000;             
         }
+        #tallyCounter, .controlsContainer, #mainContent, .imageContainer, 
+        .mediaWrapper, .reviewSection, .reactionButtons {
+            box-sizing: border-box;
+        }
         #tallyCounter {
             background-color: #f0f0f0;
             padding: 10px;
@@ -30,6 +34,16 @@
             display: flex;
             justify-content: center;
             gap: 20px;
+        }
+        .loading-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255,255,255,0.9);
+            padding: 10px;
+            text-align: center;
+            z-index: 2000;
         }
         .tallyItem {
             display: flex;
@@ -380,87 +394,6 @@
     </div>
 
     <script>
-        let imageCount = 0;
-        let imageReactions = {};
-        let currentAspectRatio = '9:16';
-        let safeZonesVisible = false;
-        let reviewSectionVisible = true;
-        let thumbsUpCount = 0;
-        let thumbsDownCount = 0;
-
-        const seasonMapping = {
-            'Select season': '',  // Default option
-            'Spring': '🌸 Spring',
-            'Summer': '☀️ Summer',
-            'Fall': '🍁 Fall',
-            'Winter': '❄️ Winter'
-        };
-
-        const countryFlags = {
-            'UK': '🇬🇧',
-            'IT': '🇮🇹',
-            'FR': '🇫🇷',
-            'DE': '🇩🇪',
-            'ES': '🇪🇸'
-        };
-
-        const dropdownOptions = [
-            "Rejection Reason",
-            "Ratio Fit",
-            "ASIN Inventory",
-            "Original Image",
-            "Price Message",
-            "MINOR Present",
-            "Text Overlay",
-            "ASINs in Order??",
-            "Explicit Nudity",
-            "Partial Nudity",
-            "Sexual Situations",
-            "Violence",
-            "Visually Disturbing",
-            "Rude Gestures",
-            "Drugs",
-            "Tobacco",
-            "Vaping",
-            "Alcohol",
-            "Gambling",
-            "Hate Speech / Symbols",
-            "Guns",
-            "Profanity",
-            "Lingerie / Swimwear"
-        ];
-
-        const secondDropdownOptions = [
-            "Interest Category",
-            "APB | Amazon Private Brands",
-            "Beauty | Beauty",
-            "Beauty | Makeup",
-            "Beauty | Nails",
-            "Beauty | Skin Care",
-            "Fashion | Men's Style",
-            "Fashion | Wedding",
-            "Fashion | Women's style",
-            "Hardlines | Coffee Making",
-            "Hardlines | Electronics",
-            "Hardlines | Gaming",
-            "Hardlines | Garden & Outdoor",
-            "Hardlines | Home Interior",
-            "Hardlines | Indoor Plants",
-            "Hardlines | Licensing (HL) Star Wars",
-            "Hardlines | Storage and Organization",
-            "Hardlines | Work From Home",
-            "Pets | Cats",
-            "Pets | Dogs",
-            "Pets | Pets",
-            "X-PF | Fitness, Running, Hiking",
-            "X-PF | Healthy Lifestyle",
-            "X-PF | Hiking",
-            "X-PF | Kitchen & Cooking",
-            "X-PF | Parenting",
-            "X-PF | Running",
-            "X-PF | Travel, Camping"
-        ];
-
         const imageTypeOptions = [
             "Image Type",
             "Lifestyle",
@@ -468,6 +401,74 @@
             "Collage",
             "Product Image"
         ];
+
+        function showLoading(show) {
+            const existing = document.querySelector('.loading-indicator');
+            if (show) {
+                if (!existing) {
+                    const loader = document.createElement('div');
+                    loader.className = 'loading-indicator';
+                    loader.textContent = 'Loading media files...';
+                    document.body.appendChild(loader);
+                }
+            } else if (existing) {
+                existing.remove();
+            }
+        }
+
+        function updateProgress(current, total) {
+            const existing = document.querySelector('.loading-indicator');
+            if (existing) {
+                existing.textContent = `Processing media ${current} of ${total}...`;
+            }
+        }
+
+        function validateCSV(lines) {
+            const expectedHeaders = ['aci', 'Category', 'Amazon URL', 'Media URL', 'Country', 'Reaction'];
+            const headers = lines[0].trim().split(',');
+            
+            // Check headers
+            const missingHeaders = expectedHeaders.filter(h => !headers.includes(h));
+            if (missingHeaders.length > 0) {
+                throw new Error(`Missing required headers: ${missingHeaders.join(', ')}`);
+            }
+
+            // Validate each line
+            lines.slice(1).forEach((line, index) => {
+                if (line.trim()) {
+                    const fields = line.split(',');
+                    if (fields.length < expectedHeaders.length) {
+                        throw new Error(`Line ${index + 2}: Missing fields`);
+                    }
+                }
+            });
+        }
+
+        function sanitizeUrl(url) {
+            return url.trim()
+                .replace(/\s+/g, '') // Remove all whitespace
+                .replace(/^(?!https?:\/\/)/, 'https://'); // Add https:// if missing
+        }
+
+        function updateStats() {
+            const stats = {
+                total: imageCount,
+                images: 0,
+                videos: 0,
+                byCountry: {},
+                byCategory: {}
+            };
+            
+            Object.values(imageReactions).forEach(record => {
+                const mediaType = getMediaType(record.mediaUrl);
+                stats[mediaType === 'video' ? 'videos' : 'images']++;
+                
+                stats.byCountry[record.country] = (stats.byCountry[record.country] || 0) + 1;
+                stats.byCategory[record.category] = (stats.byCategory[record.category] || 0) + 1;
+            });
+            
+            return stats;
+        }
 
         function updateTallyCounters() {
             let upCount = 0;
@@ -485,16 +486,15 @@
             thumbsDownCount = downCount;
         }
 
-        function generateCustomFilename(aci, country, mediaUrl) {
-            const originalExtension = mediaUrl.split('.').pop().toLowerCase();
-            const countryCode = country || 'NA';
-            return `${countryCode}.${aci}.${originalExtension}`;
-        }
-
         function getMediaType(url) {
             const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.wmv', '.m4v', '.mpg', '.mpeg'];
             const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-            const urlLower = url.toLowerCase();
+            const urlLower = url.trim().toLowerCase();
+            
+            // Check for video streaming URLs
+            if (urlLower.includes('vse-vms-transcoding')) {
+                return 'video';
+            }
             
             if (videoExtensions.some(ext => urlLower.endsWith(ext))) {
                 return 'video';
@@ -506,6 +506,12 @@
                 return 'video';
             }
             return 'image';
+        }
+
+        function generateCustomFilename(aci, country, mediaUrl) {
+            const originalExtension = mediaUrl.split('.').pop().toLowerCase();
+            const countryCode = country || 'NA';
+            return `${countryCode}.${aci}.${originalExtension}`;
         }
 
         function calculateAspectRatio(width, height) {
@@ -545,6 +551,33 @@
             imageReactions[mediaUrl].season = season === 'Select season' ? '' : season;
         }
 
+        function react(mediaUrl, reaction, selectedButton, otherButton) {
+            if (selectedButton.classList.contains('selected')) {
+                selectedButton.classList.remove('selected');
+                imageReactions[mediaUrl].reaction = 'No reaction';
+            } else {
+                selectedButton.classList.add('selected');
+                otherButton.classList.remove('selected');
+                imageReactions[mediaUrl].reaction = reaction;
+            }
+            updateTallyCounters();
+        }
+
+        function updateDropdownSelection(mediaUrl, selection) {
+            imageReactions[mediaUrl].dropdownSelection = selection;
+        }
+
+        function updateSecondDropdownSelection(mediaUrl, selection) {
+            imageReactions[mediaUrl].secondDropdownSelection = selection;
+        }
+
+        function updateImageTypeSelection(mediaUrl, selection) {
+            imageReactions[mediaUrl].imageType = selection;
+        }
+
+        function updateComments(mediaUrl, comment) {
+            imageReactions[mediaUrl].comments = comment.replace(/,/g, ';');
+        }
         function displayMedia(aci, category, amazonUrl, mediaUrl, country, initialReaction) {
             imageCount++;
             const imageArea = document.getElementById('imageArea');
@@ -553,6 +586,9 @@
             
             const headerContainer = document.createElement('div');
             headerContainer.className = 'imageHeader';
+
+            // Clean up category by removing any GL_UPDATE_REQUIRED
+            const cleanCategory = category.split('=')[0].trim();
 
             if (country && countryFlags[country]) {
                 const flagSpan = document.createElement('span');
@@ -568,7 +604,7 @@
 
             const categoryElement = document.createElement('div');
             categoryElement.className = 'imageCategory';
-            categoryElement.textContent = category;
+            categoryElement.textContent = cleanCategory;
             
             const mediaWrapper = document.createElement('div');
             mediaWrapper.className = `mediaWrapper ratio-${currentAspectRatio.replace(':', '-')}`;
@@ -578,7 +614,7 @@
             
             if (mediaType === 'video') {
                 mediaElement = document.createElement('video');
-                mediaElement.src = mediaUrl;
+                mediaElement.src = sanitizeUrl(mediaUrl);
                 mediaElement.controls = false;
                 mediaElement.loop = true;
                 mediaElement.muted = true;
@@ -586,8 +622,14 @@
                 const videoControls = document.createElement('div');
                 videoControls.className = 'videoControls';
                 
+                const controlsWrapper = document.createElement('div');
+                controlsWrapper.style.display = 'flex';
+                controlsWrapper.style.gap = '10px';
+                controlsWrapper.style.alignItems = 'center';
+
                 const playPauseBtn = document.createElement('button');
                 playPauseBtn.textContent = '▶️';
+                playPauseBtn.title = 'Play/Pause';
                 playPauseBtn.onclick = () => {
                     if (mediaElement.paused) {
                         mediaElement.play();
@@ -600,16 +642,30 @@
                 
                 const muteBtn = document.createElement('button');
                 muteBtn.textContent = '🔇';
+                muteBtn.title = 'Mute/Unmute';
                 muteBtn.onclick = () => {
                     mediaElement.muted = !mediaElement.muted;
                     muteBtn.textContent = mediaElement.muted ? '🔇' : '🔊';
+                };
+
+                const speedBtn = document.createElement('button');
+                speedBtn.textContent = '1x';
+                speedBtn.title = 'Playback Speed';
+                speedBtn.onclick = () => {
+                    const speeds = [0.5, 1, 1.5, 2];
+                    const currentIndex = speeds.indexOf(mediaElement.playbackRate);
+                    const nextIndex = (currentIndex + 1) % speeds.length;
+                    mediaElement.playbackRate = speeds[nextIndex];
+                    speedBtn.textContent = speeds[nextIndex] + 'x';
                 };
                 
                 const originalRatioSpan = document.createElement('span');
                 originalRatioSpan.className = 'originalRatio';
                 
-                videoControls.appendChild(playPauseBtn);
-                videoControls.appendChild(muteBtn);
+                controlsWrapper.appendChild(playPauseBtn);
+                controlsWrapper.appendChild(muteBtn);
+                controlsWrapper.appendChild(speedBtn);
+                videoControls.appendChild(controlsWrapper);
                 videoControls.appendChild(originalRatioSpan);
                 mediaWrapper.appendChild(videoControls);
 
@@ -623,7 +679,7 @@
                 });
             } else {
                 mediaElement = document.createElement('img');
-                mediaElement.src = mediaUrl;
+                mediaElement.src = sanitizeUrl(mediaUrl);
                 mediaElement.alt = `Media ${imageCount}`;
 
                 const typeIndicator = document.createElement('div');
@@ -631,6 +687,13 @@
                 typeIndicator.textContent = 'IMAGE';
                 mediaWrapper.appendChild(typeIndicator);
             }
+
+            // Error handling for media loading
+            mediaElement.onerror = function() {
+                this.style.display = 'none';
+                errorMessage.style.display = 'block';
+                errorMessage.innerHTML = `Unable to load media<br><a href="${mediaUrl}" target="_blank">Open directly</a>`;
+            };
 
             const overlay = document.createElement('img');
             overlay.src = 'https://www.jonloomer.com/wp-content/uploads/2022/12/safezones-combo-08172023.png';
@@ -644,11 +707,6 @@
             
             mediaElement.onload = mediaElement.onloadeddata = function() {
                 errorMessage.style.display = 'none';
-            };
-            
-            mediaElement.onerror = function() {
-                this.style.display = 'none';
-                errorMessage.style.display = 'block';
             };
             
             mediaWrapper.appendChild(mediaElement);
@@ -723,14 +781,4 @@
             seasonSelect.className = 'seasonSelect';
             seasonSelect.onchange = (e) => updateSeasonSelection(mediaUrl, e.target.value);
 
-            Object.entries(seasonMapping).forEach(([key, value]) => {
-                const optionElement = document.createElement('option');
-                optionElement.value = key;
-                optionElement.textContent = value;
-                seasonSelect.appendChild(optionElement);
-            });
-
-            seasonDropdown.appendChild(seasonSelect);
-            reactionButtons.appendChild(seasonDropdown);
-            
-            const dropdown = 
+            Object.entries(seasonMapping).forEach(([key, value
