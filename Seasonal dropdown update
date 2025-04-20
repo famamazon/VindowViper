@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vindow Viper</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 0;
+        }
+        #headerSection {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 250px;
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 1000;             
+        }
+        #tallyCounter {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .tallyItem {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .tallyEmoji {
+            font-size: 1.2em;
+        }
+        .tallyCount {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        #mainContent {
+            margin-top: 220px;
+            padding: 20px;
+        }
+        #inputArea, #imageArea {
+            margin-bottom: 20px;
+        }
+        .controlsContainer {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        #fileInput, #downloadCsv, .ratioButton, #safeZonesButton, #reviewToggleButton {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            margin: 0;
+        }
+        #fileInput {
+            padding: 10px;
+        }
+        .buttonGroup {
+            display: flex;
+            gap: 10px;
+        }
+        .ratioButton {
+            background-color: #f0f0f0;
+        }
+        .ratioButton.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        #safeZonesButton {
+            background-color: #f0f0f0;
+        }
+        #safeZonesButton.active {
+            background-color: #FF8C00;
+            color: white;
+        }
+        #reviewToggleButton {
+            background-color: #f0f0f0;
+        }
+        #reviewToggleButton.active {
+            background-color: #2196F3;
+            color: white;
+        }
+        #imageArea {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+        }
+        .imageContainer {
+            flex-grow: 1;
+            flex-basis: 200px;
+            margin: 10px;
+            padding-top: 50px;
+            text-align: center;
+        }
+        .mediaWrapper {
+            position: relative;
+            width: 100%;
+            margin-bottom: 10px;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            transition: padding-top 0.3s ease;
+        }
+        .mediaWrapper.ratio-9-16 {
+            padding-top: 177.78%;
+        }
+        .mediaWrapper.ratio-4-5 {
+            padding-top: 125%;
+        }
+        .mediaWrapper.ratio-1-1 {
+            padding-top: 100%;
+        }
+        .mediaWrapper.ratio-16-9 {
+            padding-top: 56.25%;
+        }
+        .mediaWrapper img, .mediaWrapper video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .mediaWrapper video {
+            background: #000;
+        }
+        .videoControls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 2;
+        }
+        .videoControls button {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 5px 10px;
+        }
+        .originalRatio {
+            color: white;
+            font-size: 0.9em;
+            padding: 0 10px;
+        }
+        .safeZonesOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1;
+        }
+        .safeZonesOverlay.visible {
+            opacity: 1;
+        }
+        .mediaError {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #666;
+            font-weight: bold;
+        }
+        .imageHeader {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+        .countryFlag {
+            font-size: 1.5em;
+        }
+        .imageNumber {
+            font-weight: bold;
+        }
+        .imageCategory {
+            color: #666;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+        .reviewSection {
+            transition: opacity 0.3s ease, height 0.3s ease;
+            overflow: hidden;
+        }
+        .reviewSection.hidden {
+            opacity: 0;
+            height: 0;
+            margin: 0;
+            padding: 0;
+        }
+        .reactionButtons {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .thumbsButtons {
+            display: flex;
+            gap: 10px;
+            margin: 0;
+        }
+        .dropdown {
+            margin-top: 10px;
+            width: 100%;
+        }
+        .dropdown select {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 5px;
+        }
+        .seasonSelect {
+            padding: 5px 10px;
+            font-size: 1em;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            background-color: white;
+            cursor: pointer;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        .seasonSelect option {
+            padding: 5px;
+        }
+        .reactionButtons button {
+            margin: 0 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            border: none;
+            background-color: #f0f0f0;
+            transition: background-color 0.3s;
+            font-size: 1.2em;
+        }
+        .reactionButtons button.selected {
+            color: white;
+        }
+        .reactionButtons button.thumbsUp.selected {
+            background-color: green;
+        }
+        .reactionButtons button.thumbsDown.selected {
+            background-color: red;
+        }
+        .commentSection {
+            margin-top: 10px;
+            width: 100%;
+        }
+        .commentSection textarea {
+            width: 100%;
+            padding: 5px;
+            margin-top: 5px;
+            resize: vertical;
+            min-height: 60px;
+            font-family: Arial, sans-serif;
+        }
+        .mediaType {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            z-index: 2;
+        }
+        .mediaLinksContainer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .linksArea {
+            display: flex;
+            gap: 10px;
+        }
+        .mediaLinksContainer a {
+            text-decoration: none;
+            padding: 5px 10px;
+            background-color: #f0f0f0;
+            color: #333;
+            border-radius: 4px;
+            font-size: 0.9em;
+            transition: background-color 0.3s;
+        }
+        .mediaLinksContainer a:hover {
+            background-color: #e0e0e0;
+        }
+        .mediaLinksContainer .thumbsButtons button {
+            padding: 5px 10px;
+            cursor: pointer;
+            border: none;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            font-size: 1.2em;
+            transition: background-color 0.3s;
+        }
+        .mediaLinksContainer .thumbsButtons button.selected {
+            color: white;
+        }
+        .mediaLinksContainer .thumbsButtons button.thumbsUp.selected {
+            background-color: green;
+        }
+        .mediaLinksContainer .thumbsButtons button.thumbsDown.selected {
+            background-color: red;
+        }
+        .titleLogo {
+            width: 128px;
+            height: 96px;
+            margin-right: 20px;
+            vertical-align: middle;
+        }
+        #headerSection h1 {
+            display: flex;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="headerSection">
+        <h1><img src="https://static.wikia.nocookie.net/animaniacs/images/1/1f/The_Viper_silhouette.jpg/revision/latest?cb=20220810225021" alt="Vindow_Viper" class="titleLogo">Vindow Viper</h1>
+        
+        <div id="tallyCounter">
+            <div class="tallyItem">
+                <span class="tallyEmoji">👍</span>
+                <span class="tallyCount" id="thumbsUpCount">0</span>
+            </div>
+            <div class="tallyItem">
+                <span class="tallyEmoji">👎</span>
+                <span class="tallyCount" id="thumbsDownCount">0</span>
+            </div>
+        </div>
+        
+        <div id="inputArea">
+            <div class="controlsContainer">
+                <input type="file" id="fileInput" accept=".csv">
+                <button id="downloadCsv">Download CSV</button>
+                <div class="buttonGroup">
+                    <button class="ratioButton active" data-ratio="9:16">9:16</button>
+                    <button class="ratioButton" data-ratio="4:5">4:5</button>
+                    <button class="ratioButton" data-ratio="1:1">1:1</button>
+                    <button class="ratioButton" data-ratio="16:9">16:9</button>
+                </div>
+                <button id="safeZonesButton">Safe zones</button>
+                <button id="reviewToggleButton">Review</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mainContent">
+        <div id="imageArea"></div>
+    </div>
+
+    <script>
+        let imageCount = 0;
+        let imageReactions = {};
+        let currentAspectRatio = '9:16';
+        let safeZonesVisible = false;
+        let reviewSectionVisible = true;
+        let thumbsUpCount = 0;
+        let thumbsDownCount = 0;
+
+        const seasonMapping = {
+            'Select season': '',  // Default option
+            'Spring': '🌸 Spring',
+            'Summer': '☀️ Summer',
+            'Fall': '🍁 Fall',
+            'Winter': '❄️ Winter'
+        };
+
+        const countryFlags = {
+            'UK': '🇬🇧',
+            'IT': '🇮🇹',
+            'FR': '🇫🇷',
+            'DE': '🇩🇪',
+            'ES': '🇪🇸'
+        };
+        const dropdownOptions = [
+            "Rejection Reason",
+            "Ratio Fit",
+            "ASIN Inventory",
+            "Original Image",
+            "Price Message",
+            "MINOR Present",
+            "Text Overlay",
+            "ASINs in Order??",
+            "Explicit Nudity",
+            "Partial Nudity",
+            "Sexual Situations",
+            "Violence",
+            "Visually Disturbing",
+            "Rude Gestures",
+            "Drugs",
+            "Tobacco",
+            "Vaping",
+            "Alcohol",
+            "Gambling",
+            "Hate Speech / Symbols",
+            "Guns",
+            "Profanity",
+            "Lingerie / Swimwear"
+        ];
+
+        const secondDropdownOptions = [
+            "Interest Category",
+            "APB | Amazon Private Brands",
+            "Beauty | Beauty",
+            "Beauty | Makeup",
+            "Beauty | Nails",
+            "Beauty | Skin Care",
+            "Fashion | Men's Style",
+            "Fashion | Wedding",
+            "Fashion | Women's style",
+            "Hardlines | Coffee Making",
+            "Hardlines | Electronics",
+            "Hardlines | Gaming",
+            "Hardlines | Garden & Outdoor",
+            "Hardlines | Home Interior",
+            "Hardlines | Indoor Plants",
+            "Hardlines | Licensing (HL) Star Wars",
+            "Hardlines | Storage and Organization",
+            "Hardlines | Work From Home",
+            "Pets | Cats",
+            "Pets | Dogs",
+            "Pets | Pets",
+            "X-PF | Fitness, Running, Hiking",
+            "X-PF | Healthy Lifestyle",
+            "X-PF | Hiking",
+            "X-PF | Kitchen & Cooking",
+            "X-PF | Parenting",
+            "X-PF | Running",
+            "X-PF | Travel, Camping"
+        ];
+
+        const imageTypeOptions = [
+            "Image Type",
+            "Lifestyle",
+            "Flat Lay",
+            "Collage",
+            "Product Image"
+        ];
+
+        function updateTallyCounters() {
+            let upCount = 0;
+            let downCount = 0;
+            
+            Object.values(imageReactions).forEach(reaction => {
+                if (reaction.reaction === 'thumbs up') upCount++;
+                if (reaction.reaction === 'thumbs down') downCount++;
+            });
+            
+            document.getElementById('thumbsUpCount').textContent = upCount;
+            document.getElementById('thumbsDownCount').textContent = downCount;
+            
+            thumbsUpCount = upCount;
+            thumbsDownCount = downCount;
+        }
+
+        function generateCustomFilename(aci, country, mediaUrl) {
+            const originalExtension = mediaUrl.split('.').pop().toLowerCase();
+            const countryCode = country || 'NA';
+            return `${countryCode}.${aci}.${originalExtension}`;
+        }
+
+        function getMediaType(url) {
+            const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.wmv', '.m4v', '.mpg', '.mpeg'];
+            const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+            const urlLower = url.toLowerCase();
+            
+            if (videoExtensions.some(ext => urlLower.endsWith(ext))) {
+                return 'video';
+            }
+            if (imageExtensions.some(ext => urlLower.endsWith(ext))) {
+                return 'image';
+            }
+            if (urlLower.includes('youtube.com') || urlLower.includes('vimeo.com')) {
+                return 'video';
+            }
+            return 'image';
+        }
+
+        function calculateAspectRatio(width, height) {
+            const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+            const divisor = gcd(width, height);
+            const simplifiedWidth = width / divisor;
+            const simplifiedHeight = height / divisor;
+            
+            const ratio = width / height;
+            if (Math.abs(ratio - 16/9) < 0.01) return "16:9";
+            if (Math.abs(ratio - 9/16) < 0.01) return "9:16";
+            if (Math.abs(ratio - 4/5) < 0.01) return "4:5";
+            if (Math.abs(ratio - 1) < 0.01) return "1:1";
+            
+            return `${simplifiedWidth}:${simplifiedHeight}`;
+        }
+
+        function getAspectRatio(mediaElement) {
+            return new Promise((resolve) => {
+                if (mediaElement instanceof HTMLImageElement) {
+                    if (mediaElement.complete) {
+                        resolve(calculateAspectRatio(mediaElement.naturalWidth, mediaElement.naturalHeight));
+                    } else {
+                        mediaElement.onload = () => resolve(calculateAspectRatio(mediaElement.naturalWidth, mediaElement.naturalHeight));
+                    }
+                } else if (mediaElement instanceof HTMLVideoElement) {
+                    if (mediaElement.videoWidth) {
+                        resolve(calculateAspectRatio(mediaElement.videoWidth, mediaElement.videoHeight));
+                    } else {
+                        mediaElement.onloadedmetadata = () => resolve(calculateAspectRatio(mediaElement.videoWidth, mediaElement.videoHeight));
+                    }
+                }
+            });
+        }
+
+        function updateSeasonSelection(mediaUrl, season) {
+            imageReactions[mediaUrl].season = season === 'Select season' ? '' : season;
+        }
+
+        function displayMedia(aci, category, image, mediaUrl, country, initialReaction) {
+            imageCount++;
+            const imageArea = document.getElementById('imageArea');
+            const container = document.createElement('div');
+            container.className = 'imageContainer';
+            
+            const headerContainer = document.createElement('div');
+            headerContainer.className = 'imageHeader';
+
+            if (country && countryFlags[country]) {
+                const flagSpan = document.createElement('span');
+                flagSpan.className = 'countryFlag';
+                flagSpan.textContent = countryFlags[country];
+                headerContainer.appendChild(flagSpan);
+            }
+
+            const numberElement = document.createElement('div');
+            numberElement.className = 'imageNumber';
+            numberElement.textContent = `Media ${imageCount}`;
+            headerContainer.appendChild(numberElement);
+
+            const categoryElement = document.createElement('div');
+            categoryElement.className = 'imageCategory';
+            categoryElement.textContent = category;
+            
+            const mediaWrapper = document.createElement('div');
+            mediaWrapper.className = `mediaWrapper ratio-${currentAspectRatio.replace(':', '-')}`;
+            
+            const mediaType = getMediaType(mediaUrl);
+            let mediaElement;
+            
+            if (mediaType === 'video') {
+                mediaElement = document.createElement('video');
+                mediaElement.src = mediaUrl;
+                mediaElement.controls = false;
+                mediaElement.loop = true;
+                mediaElement.muted = true;
+                
+                const videoControls = document.createElement('div');
+                videoControls.className = 'videoControls';
+                
+                const playPauseBtn = document.createElement('button');
+                playPauseBtn.textContent = '▶️';
+                playPauseBtn.onclick = () => {
+                    if (mediaElement.paused) {
+                        mediaElement.play();
+                        playPauseBtn.textContent = '⏸️';
+                    } else {
+                        mediaElement.pause();
+                        playPauseBtn.textContent = '▶️';
+                    }
+                };
+                
+                const muteBtn = document.createElement('button');
+                muteBtn.textContent = '🔇';
+                muteBtn.onclick = () => {
+                    mediaElement.muted = !mediaElement.muted;
+                    muteBtn.textContent = mediaElement.muted ? '🔇' : '🔊';
+                };
+                
+                const originalRatioSpan = document.createElement('span');
+                originalRatioSpan.className = 'originalRatio';
+                
+                videoControls.appendChild(playPauseBtn);
+                videoControls.appendChild(muteBtn);
+                videoControls.appendChild(originalRatioSpan);
+                mediaWrapper.appendChild(videoControls);
+
+                const typeIndicator = document.createElement('div');
+                typeIndicator.className = 'mediaType';
+                typeIndicator.textContent = 'VIDEO';
+                mediaWrapper.appendChild(typeIndicator);
+
+                getAspectRatio(mediaElement).then(ratio => {
+                    originalRatioSpan.textContent = ratio;
+                });
+            } else {
+                mediaElement = document.createElement('img');
+                mediaElement.src = mediaUrl;
+                mediaElement.alt = `Media ${imageCount}`;
+
+                const typeIndicator = document.createElement('div');
+                typeIndicator.className = 'mediaType';
+                typeIndicator.textContent = 'IMAGE';
+                mediaWrapper.appendChild(typeIndicator);
+            }
+
+            const overlay = document.createElement('img');
+            overlay.src = 'https://www.jonloomer.com/wp-content/uploads/2022/12/safezones-combo-08172023.png';
+            overlay.className = `safeZonesOverlay ${safeZonesVisible ? 'visible' : ''}`;
+            overlay.alt = 'Safe Zones Overlay';
+            
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'mediaError';
+            errorMessage.textContent = 'Media not available';
+            errorMessage.style.display = 'none';
+            
+            mediaElement.onload = mediaElement.onloadeddata = function() {
+                errorMessage.style.display = 'none';
+            };
+            
+            mediaElement.onerror = function() {
+                this.style.display = 'none';
+                errorMessage.style.display = 'block';
+            };
+            
+            mediaWrapper.appendChild(mediaElement);
+            mediaWrapper.appendChild(overlay);
+            mediaWrapper.appendChild(errorMessage);
+            
+            const mediaLinksContainer = document.createElement('div');
+            mediaLinksContainer.className = 'mediaLinksContainer';
+
+            const thumbsButtons = document.createElement('div');
+            thumbsButtons.className = 'thumbsButtons';
+            
+            const thumbsUp = document.createElement('button');
+            thumbsUp.textContent = '👍';
+            thumbsUp.className = 'thumbsUp';
+            thumbsUp.onclick = () => react(mediaUrl, 'thumbs up', thumbsUp, thumbsDown);
+            
+            const thumbsDown = document.createElement('button');
+            thumbsDown.textContent = '👎';
+            thumbsDown.className = 'thumbsDown';
+            thumbsDown.onclick = () => react(mediaUrl, 'thumbs down', thumbsDown, thumbsUp);
+            
+            thumbsButtons.appendChild(thumbsUp);
+            thumbsButtons.appendChild(thumbsDown);
+
+            const linksArea = document.createElement('div');
+            linksArea.className = 'linksArea';
+            
+            const link = document.createElement('a');
+            link.href = image;
+            link.textContent = 'LINK';
+            link.target = '_blank';
+            linksArea.appendChild(link);
+
+            if (mediaType === 'video') {
+                const downloadLink = document.createElement('a');
+                downloadLink.href = mediaUrl;
+                downloadLink.textContent = 'DOWNLOAD';
+                const customFilename = generateCustomFilename(aci, country, mediaUrl);
+                downloadLink.onclick = (e) => {
+                    e.preventDefault();
+                    fetch(mediaUrl)
+                        .then(response => response.blob())
+                        .then(blob => {
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.style.display = 'none';
+                            a.href = url;
+                            a.download = customFilename;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+                        });
+                };
+                linksArea.appendChild(downloadLink);
+            }
+
+            mediaLinksContainer.appendChild(thumbsButtons);
+            mediaLinksContainer.appendChild(linksArea);
+
+            const reviewSection = document.createElement('div');
+            reviewSection.className = `reviewSection ${!reviewSectionVisible ? 'hidden' : ''}`;
+            
+            const reactionButtons = document.createElement('div');
+            reactionButtons.className = 'reactionButtons';
+            
+            // Season Dropdown
+            const seasonDropdown = document.createElement('div');
+            seasonDropdown.className = 'dropdown';
+            const seasonSelect = document.createElement('select');
+            seasonSelect.className = 'seasonSelect';
+            seasonSelect.onchange = (e) => updateSeasonSelection(mediaUrl, e.target.value);
+
+            Object.entries(seasonMapping).forEach(([key, value]) => {
+                const optionElement = document.createElement('option');
+                optionElement.value = key;
+                optionElement.textContent = value;
+                seasonSelect.appendChild(optionElement);
+            });
+
+            seasonDropdown.appendChild(seasonSelect);
+            reactionButtons.appendChild(seasonDropdown);
+            
+            const dropdown = document.createElement('div');
+            dropdown.className = 'dropdown';
+            const select = document.createElement('select');
+            select.onchange = (e) => updateDropdownSelection(mediaUrl, e.target.value);
+            
+            dropdownOptions.forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option;
+                optionElement.textContent = option;
+                select.appendChild(optionElement);
+            });
+            
+            dropdown.appendChild(select);
+
+            const secondDropdown = document.createElement('div');
+            secondDropdown.className = 'dropdown';
+            const secondSelect = document.createElement('select');
+            secondSelect.onchange = (e) => updateSecondDropdownSelection(mediaUrl, e.target.value);
+            
+            secondDropdownOptions.forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option;
+                optionElement.textContent = option;
+                secondSelect.appendChild(optionElement);
+            });
+            
+            secondDropdown.appendChild(secondSelect);
+
+            const imageTypeDropdown = document.createElement('div');
+            imageTypeDropdown.className = 'dropdown';
+            const imageTypeSelect = document.createElement('select');
+            imageTypeSelect.onchange = (e) => updateImageTypeSelection(mediaUrl, e.target.value);
+            
+            imageTypeOptions.forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option;
+                optionElement.textContent = option;
+                imageTypeSelect.appendChild(optionElement);
+            });
+            
+            imageTypeDropdown.appendChild(imageTypeSelect);
+
+            const commentSection = document.createElement('div');
+            commentSection.className = 'commentSection';
+            const commentLabel = document.createElement('div');
+            commentLabel.textContent = 'Comments:';
+            const textarea = document.createElement('textarea');
+            textarea.placeholder = 'Enter your comments here...';
+            textarea.onchange = (e) => updateComments(mediaUrl, e.target.value);
+            
+            commentSection.appendChild(commentLabel);
+            commentSection.appendChild(textarea);
+            
+            reviewSection.appendChild(reactionButtons);
+            reviewSection.appendChild(dropdown);
+            reviewSection.appendChild(secondDropdown);
+            reviewSection.appendChild(imageTypeDropdown);
+            reviewSection.appendChild(commentSection);
+            
+            container.appendChild(headerContainer);
+            container.appendChild(categoryElement);
+            container.appendChild(mediaWrapper);
+            container.appendChild(mediaLinksContainer);
+            container.appendChild(reviewSection);
+            imageArea.appendChild(container);
+            
+            imageReactions[mediaUrl] = { 
+                aci: aci,
+                category: category,
+                image: image,
+                country: country || '',
+                reaction: initialReaction || 'No reaction',
+                season: '',
+                drop
